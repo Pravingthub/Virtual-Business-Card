@@ -264,9 +264,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById('fs').addEventListener('click', openPresent);
   document.getElementById('close').addEventListener('click', closePresent);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePresent(); });
-  // Open with #scan (e.g. a home-screen bookmark) to go straight to the full-screen code
-  // Opening the installed app (or any link ending in #scan) goes straight to the full-screen contact code
-  if (location.hash === '#scan') openPresent();
+  // Always open on the home view, even if an older install still launches with #scan
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 
   // Offline support
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
