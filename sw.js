@@ -1,5 +1,5 @@
 // Keeps the card available offline (meeting rooms, flights, basements).
-const CACHE = 'pravin-card-v12';
+const CACHE = 'pravin-card-v13';
 const FILES = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'
@@ -16,19 +16,21 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Serve from cache instantly; refresh the cache in the background when online.
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  e.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const key = req.mode === 'navigate' ? './index.html' : req;
-      const cached = await cache.match(key, { ignoreSearch: true });
-      const fresh = fetch(req).then((res) => {
-        if (res && res.ok) cache.put(key, res.clone());
+
+  // The page itself: always try the network first so updates show immediately; fall back to the cache offline.
+  if (req.mode === 'navigate') {
+    e.respondWith(
+      fetch(req).then((res) => {
+        if (res && res.ok) caches.open(CACHE).then((c) => c.put('./index.html', res.clone()));
         return res;
-      }).catch(() => cached);
-      return cached || fresh;
-    })
-  );
+      }).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Icons and manifest: cache first.
+  e.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => hit || fetch(req)));
 });
